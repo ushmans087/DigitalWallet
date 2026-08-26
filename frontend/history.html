@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Wallet - History</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logo">WALLET.IO</div>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="dashboard.html" class="nav-link">Dashboard</a></li>
+            <li class="nav-item"><a href="wallet.html" class="nav-link">Wallet</a></li>
+            <li class="nav-item"><a href="bank.html" class="nav-link">Bank</a></li>
+            <li class="nav-item"><a href="history.html" class="nav-link">History</a></li>
+        </ul>
+        <button id="logoutBtn" class="logout-btn">Logout</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <h1 class="mb-3">Transaction History</h1>
+        <p style="color: #aaa; margin-bottom: 2rem;">View and filter all your wallet transactions by date range.</p>
+
+        <!-- Date Filter Toolbar Card -->
+        <div class="filter-card">
+            <div class="filter-header">
+                <div class="filter-title">
+                    <span>📅</span> Date Range Filter
+                </div>
+                <div id="activeFilterTag" style="display: none;">
+                    <span class="active-filter-tag">✓ Filter Active</span>
+                </div>
+            </div>
+            
+            <form id="filterForm">
+                <div class="filter-grid">
+                    <div class="form-group mb-0">
+                        <label class="form-label" for="fromDate">From Date & Time</label>
+                        <input type="datetime-local" id="fromDate" class="form-control">
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="form-label" for="toDate">To Date & Time</label>
+                        <input type="datetime-local" id="toDate" class="form-control">
+                    </div>
+                    <div class="d-flex gap-2 mb-0">
+                        <button type="submit" class="btn" style="flex: 1;">Apply Filter</button>
+                        <button type="button" id="clearFilterBtn" class="btn btn-outline" style="flex: 1;">Clear</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="preset-container">
+                <span style="font-size: 0.8rem; color: #888; align-self: center; margin-right: 0.25rem;">Quick Presets:</span>
+                <button type="button" class="preset-chip" onclick="applyPreset('today')">Today</button>
+                <button type="button" class="preset-chip" onclick="applyPreset('7days')">Last 7 Days</button>
+                <button type="button" class="preset-chip" onclick="applyPreset('30days')">Last 30 Days</button>
+                <button type="button" class="preset-chip" onclick="applyPreset('thisMonth')">This Month</button>
+            </div>
+        </div>
+
+        <!-- Transactions Container -->
+        <div class="card">
+            <div id="historyContainer">
+                <p>Loading transactions...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="toast.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        checkAuth();
+
+        const container = document.getElementById("historyContainer");
+        const activeTag = document.getElementById("activeFilterTag");
+        const fromDateInput = document.getElementById("fromDate");
+        const toDateInput = document.getElementById("toDate");
+
+        // Helper to format Date object into YYYY-MM-THH:mm format for datetime-local input
+        function formatForInput(date) {
+            const pad = (n) => String(n).padStart(2, '0');
+            const yyyy = date.getFullYear();
+            const mm = pad(date.getMonth() + 1);
+            const dd = pad(date.getDate());
+            const hh = pad(date.getHours());
+            const min = pad(date.getMinutes());
+            return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+        }
+
+        // Helper to convert input datetime-local string to ISO LocalDateTime string (YYYY-MM-DDTHH:mm:ss)
+        function formatToIsoLocalDateTime(inputStr, isEndOfDay = false) {
+            if (!inputStr) return null;
+            let date = new Date(inputStr);
+            if (isNaN(date.getTime())) return null;
+
+            const pad = (n) => String(n).padStart(2, '0');
+            const yyyy = date.getFullYear();
+            const mm = pad(date.getMonth() + 1);
+            const dd = pad(date.getDate());
+            const hh = pad(date.getHours());
+            const min = pad(date.getMinutes());
+            const ss = isEndOfDay ? "59" : pad(date.getSeconds());
+            return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}`;
+        }
+
+        function renderTransactions(transactions) {
+            if (!transactions || transactions.length === 0) {
+                container.innerHTML = "<p style='color:#aaa; text-align:center; padding: 1.5rem 0;'>No transactions found for the selected period.</p>";
+                return;
+            }
+
+            // Sort transactions by date (newest first)
+            transactions.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+
+            let html = '<ul class="transaction-list">';
+            transactions.forEach(tx => {
+                const isPositive = tx.type === 'DEPOSIT' || tx.type === 'RECEIVE';
+                const amountClass = isPositive ? 'positive' : 'negative';
+                const sign = isPositive ? '+' : '-';
+                const dateStr = tx.timestamp ? new Date(tx.timestamp).toLocaleString() : 'Date Unknown';
+                
+                let detailsStr = '';
+                if (tx.receiverUsername) {
+                    detailsStr = `To/From: ${tx.receiverUsername}`;
+                } else if (tx.receiverWalletId) {
+                    detailsStr = `To/From Wallet ID: ${tx.receiverWalletId}`;
+                }
+
+                let statusBadge = '';
+                if (tx.status) {
+                    const st = tx.status.toUpperCase();
+                    let badgeClass = 'badge-pending';
+                    if (st === 'SUCCESS' || st === 'COMPLETED' || st === 'APPROVED') badgeClass = 'badge-approved';
+                    else if (st === 'FAILED' || st === 'REJECTED') badgeClass = 'badge-rejected';
+                    statusBadge = `<span class="badge ${badgeClass}" style="margin-left: 0.5rem;">${st}</span>`;
+                }
+
+                html += `
+                    <li class="transaction-item">
+                        <div class="tx-info">
+                            <div class="d-flex align-center">
+                                <span class="tx-title">${tx.description || tx.type || 'Transaction'}</span>
+                                ${statusBadge}
+                            </div>
+                            <span class="tx-date" style="margin-top: 2px;">${dateStr}</span>
+                            ${detailsStr ? `<span class="tx-date">${detailsStr}</span>` : ''}
+                        </div>
+                        <div class="tx-amount ${amountClass}">${sign}$${parseFloat(tx.amount || 0).toFixed(2)}</div>
+                    </li>
+                `;
+            });
+            html += '</ul>';
+            container.innerHTML = html;
+        }
+
+        async function loadHistory() {
+            container.innerHTML = "<p style='color:#aaa;'>Loading transactions...</p>";
+            activeTag.style.display = "none";
+            clearPresetChipsActive();
+
+            try {
+                const res = await apiCall("/payment/get");
+                if (res.ok) {
+                    renderTransactions(res.data);
+                } else {
+                    container.innerHTML = "<p class='error-message' style='display:block;'>Failed to load history.</p>";
+                }
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = "<p class='error-message' style='display:block;'>Network error loading transactions.</p>";
+            }
+        }
+
+        async function applyFilter(fromDateVal, toDateVal) {
+            const fromIso = formatToIsoLocalDateTime(fromDateVal, false);
+            const toIso = formatToIsoLocalDateTime(toDateVal, true);
+
+            if (!fromIso || !toIso) {
+                showToast("Please select both From Date and To Date.", "warning", "Filter Notice");
+                return;
+            }
+
+            if (new Date(fromDateVal) > new Date(toDateVal)) {
+                showToast("From Date cannot be later than To Date.", "error", "Invalid Range");
+                return;
+            }
+
+            container.innerHTML = "<p style='color:#aaa;'>Filtering transactions...</p>";
+
+            try {
+                const res = await apiCall("/payment/get/filter", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        fromDate: fromIso,
+                        toDate: toIso
+                    })
+                });
+
+                if (res.ok) {
+                    activeTag.style.display = "block";
+                    renderTransactions(res.data);
+                    showToast(`Showing transactions from ${new Date(fromDateVal).toLocaleDateString()} to ${new Date(toDateVal).toLocaleDateString()}`, "info", "Filter Applied");
+                } else {
+                    const errorMsg = typeof res.data === 'string' ? res.data : "Failed to fetch filtered transactions.";
+                    container.innerHTML = `<p class='error-message' style='display:block;'>${errorMsg}</p>`;
+                    showToast(errorMsg, "error", "Filter Failed");
+                }
+            } catch (error) {
+                console.error("Error filtering transactions:", error);
+                container.innerHTML = "<p class='error-message' style='display:block;'>Network error filtering transactions.</p>";
+                showToast("Network error while filtering transactions.", "error", "Connection Error");
+            }
+        }
+
+        function clearPresetChipsActive() {
+            document.querySelectorAll('.preset-chip').forEach(chip => chip.classList.remove('active'));
+        }
+
+        function applyPreset(type) {
+            clearPresetChipsActive();
+            
+            // Highlight clicked preset chip
+            const clickedBtn = event.target;
+            if (clickedBtn && clickedBtn.classList.contains('preset-chip')) {
+                clickedBtn.classList.add('active');
+            }
+
+            const now = new Date();
+            let from = new Date();
+            let to = new Date();
+
+            if (type === 'today') {
+                from.setHours(0, 0, 0, 0);
+                to.setHours(23, 59, 59, 999);
+            } else if (type === '7days') {
+                from.setDate(now.getDate() - 7);
+                from.setHours(0, 0, 0, 0);
+                to.setHours(23, 59, 59, 999);
+            } else if (type === '30days') {
+                from.setDate(now.getDate() - 30);
+                from.setHours(0, 0, 0, 0);
+                to.setHours(23, 59, 59, 999);
+            } else if (type === 'thisMonth') {
+                from = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+                to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+            }
+
+            fromDateInput.value = formatForInput(from);
+            toDateInput.value = formatForInput(to);
+
+            applyFilter(fromDateInput.value, toDateInput.value);
+        }
+
+        document.getElementById("filterForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            clearPresetChipsActive();
+            applyFilter(fromDateInput.value, toDateInput.value);
+        });
+
+        document.getElementById("clearFilterBtn").addEventListener("click", () => {
+            fromDateInput.value = "";
+            toDateInput.value = "";
+            loadHistory();
+        });
+
+        document.addEventListener("DOMContentLoaded", loadHistory);
+    </script>
+</body>
+</html>

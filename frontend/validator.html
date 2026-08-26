@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Wallet - Transaction Validator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logo">WALLET.IO</div>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="validator.html" class="nav-link active">Bank Transactions</a></li>
+        </ul>
+        <button id="logoutBtn" class="logout-btn">Logout</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="d-flex justify-between align-center mb-4">
+            <div>
+                <h1>Bank Transaction Validator</h1>
+                <p style="color: #aaa; font-size: 0.95rem;">Review, approve, or reject pending bank transactions from wallet database</p>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="loadValidatorDashboard()">↻ Refresh</button>
+        </div>
+
+        <!-- Metrics Cards -->
+        <div class="bank-grid mb-4" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+            <div class="card" style="padding: 1.25rem; margin-bottom: 0;">
+                <div style="color: #ffb74d; font-size: 0.8rem; font-weight: 600;">PENDING REQUESTS</div>
+                <div style="font-size: 2rem; font-weight: 700; color: #ffb74d; margin-top: 0.25rem;" id="countPending">0</div>
+            </div>
+            <div class="card" style="padding: 1.25rem; margin-bottom: 0;">
+                <div style="color: #888; font-size: 0.8rem; font-weight: 600;">TOTAL PENDING AMOUNT</div>
+                <div style="font-size: 2rem; font-weight: 700; margin-top: 0.25rem;" id="countTotalAmount">$0.00</div>
+            </div>
+            <div class="card" style="padding: 1.25rem; margin-bottom: 0;">
+                <div style="color: #81c784; font-size: 0.8rem; font-weight: 600;">DEPOSIT REQUESTS</div>
+                <div style="font-size: 2rem; font-weight: 700; color: #81c784; margin-top: 0.25rem;" id="countDeposits">0</div>
+            </div>
+            <div class="card" style="padding: 1.25rem; margin-bottom: 0;">
+                <div style="color: #64b5f6; font-size: 0.8rem; font-weight: 600;">WITHDRAWAL REQUESTS</div>
+                <div style="font-size: 2rem; font-weight: 700; color: #64b5f6; margin-top: 0.25rem;" id="countWithdrawals">0</div>
+            </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="d-flex gap-2 mb-3 align-center">
+            <span style="color: #888; font-size: 0.9rem; font-weight: 500;">Filter Type:</span>
+            <button class="btn btn-sm btn-outline filter-btn active" data-filter="ALL" onclick="filterTransactions('ALL', this)">All Pending</button>
+            <button class="btn btn-sm btn-outline filter-btn" data-filter="DEPOSIT" onclick="filterTransactions('DEPOSIT', this)">Deposits</button>
+            <button class="btn btn-sm btn-outline filter-btn" data-filter="WITHDRAW" onclick="filterTransactions('WITHDRAW', this)">Withdrawals</button>
+        </div>
+
+        <!-- Transactions Table Card -->
+        <div class="card" style="padding: 1.5rem;">
+            <div id="validatorTableContainer">
+                <p>Loading pending bank transactions from database...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="toast.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        checkAuth();
+
+        let pendingTransactions = [];
+        let currentFilter = "ALL";
+
+        async function loadValidatorDashboard() {
+            const container = document.getElementById("validatorTableContainer");
+            container.innerHTML = "<p style='color:#aaa; text-align:center; padding: 2rem 0;'>Loading pending bank transactions...</p>";
+
+            try {
+                const res = await apiCall("/wallet/validator/pending");
+                if (res.ok) {
+                    pendingTransactions = res.data || [];
+                    updateMetrics(pendingTransactions);
+                    renderTable();
+                } else {
+                    container.innerHTML = "<p class='error-message' style='display:block; text-align:center;'>Failed to load pending transactions from server.</p>";
+                }
+            } catch (error) {
+                container.innerHTML = "<p class='error-message' style='display:block; text-align:center;'>Network error connecting to validator service.</p>";
+            }
+        }
+
+        function filterTransactions(filterType, btnEl) {
+            currentFilter = filterType;
+            document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+            if (btnEl) btnEl.classList.add("active");
+            renderTable();
+        }
+
+        function updateMetrics(txs) {
+            const totalAmount = txs.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+            const depositsCount = txs.filter(t => t.type === "DEPOSIT").length;
+            const withdrawalsCount = txs.filter(t => t.type === "WITHDRAW").length;
+
+            document.getElementById("countPending").innerText = txs.length;
+            document.getElementById("countTotalAmount").innerText = `$${totalAmount.toFixed(2)}`;
+            document.getElementById("countDeposits").innerText = depositsCount;
+            document.getElementById("countWithdrawals").innerText = withdrawalsCount;
+        }
+
+        function renderTable() {
+            const filtered = pendingTransactions.filter(t => {
+                if (currentFilter === "ALL") return true;
+                return t.type === currentFilter;
+            });
+
+            const container = document.getElementById("validatorTableContainer");
+            if (filtered.length === 0) {
+                container.innerHTML = `<p style="color:#aaa; text-align:center; padding: 2rem 0;">No pending ${currentFilter !== "ALL" ? currentFilter.toLowerCase() : ""} transactions found in database.</p>`;
+                return;
+            }
+
+            let html = `
+                <table class="validator-table">
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>User ID</th>
+                            <th>Bank Account ID</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            filtered.forEach(tx => {
+                const badgeClass = tx.status === 'PENDING' ? 'badge-pending' : (tx.status === 'VERIFIED' ? 'badge-approved' : 'badge-rejected');
+                const typeLabel = tx.type === 'DEPOSIT' ? 'Deposit' : 'Withdrawal';
+                
+                let actionsHtml = `
+                    <div class="d-flex gap-2 justify-end">
+                        <button class="btn btn-sm btn-success" onclick="verifyTx(${tx.id})">Accept</button>
+                        <button class="btn btn-sm btn-danger" onclick="rejectTx(${tx.id})">Reject</button>
+                    </div>
+                `;
+
+                html += `
+                    <tr>
+                        <td style="font-weight: 600;">#${tx.id}</td>
+                        <td>User #${tx.userId}</td>
+                        <td>Account #${tx.bankAccountId}</td>
+                        <td><span style="font-size:0.85rem; font-weight: 500;">${typeLabel}</span></td>
+                        <td style="font-weight: 600; color: ${tx.type === 'DEPOSIT' ? '#81c784' : '#ffffff'};">$${parseFloat(tx.amount).toFixed(2)}</td>
+                        <td><span class="badge ${badgeClass}">${tx.status}</span></td>
+                        <td style="text-align: right;">${actionsHtml}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        async function verifyTx(id) {
+            try {
+                const res = await apiCall(`/wallet/validator/${id}/verify`, { method: "PUT" });
+                if (res.ok && res.data === true) {
+                    showToast(`Transaction <strong>#${id}</strong> verified and applied successfully!`, "success", "Transaction Verified");
+                    loadValidatorDashboard();
+                } else {
+                    showToast(`Failed to verify transaction #${id}. Check account balance and details.`, "error", "Verification Failed");
+                }
+            } catch (error) {
+                showToast("Network error while verifying transaction.", "error", "Connection Error");
+            }
+        }
+
+        async function rejectTx(id) {
+            try {
+                const res = await apiCall(`/wallet/validator/${id}/reject`, { method: "PUT" });
+                if (res.ok && res.data === true) {
+                    showToast(`Transaction <strong>#${id}</strong> was rejected.`, "info", "Transaction Rejected");
+                    loadValidatorDashboard();
+                } else {
+                    showToast(`Failed to reject transaction #${id}.`, "error", "Action Failed");
+                }
+            } catch (error) {
+                showToast("Network error while rejecting transaction.", "error", "Connection Error");
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", loadValidatorDashboard);
+    </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# Maven
+**/target/
+
+# IntelliJ IDEA
+**/.idea/
+**/*.iml
+
+# VS Code
+**/.vscode/
+
+# Node
+**/node_modules/
+
+# Environment files
+**/.env
+
+# Local Spring configuration
+**/application-local.properties
+
+# Logs
+**/*.log
+
+# OS files
+.DS_Store
+Thumbs.db
