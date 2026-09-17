@@ -60,14 +60,21 @@
         const randomMsg = warmMessages[Math.floor(Math.random() * warmMessages.length)];
         document.getElementById("warmWelcomeMsg").innerHTML = randomMsg;
 
+        let currentUserId = null;
+        let currentWalletId = null;
+        let currentUsername = null;
+
         async function loadDashboard() {
             try {
-                // Fetch wallet data to get username if possible
+                // Fetch wallet data to get username and user details
                 const email = getUserEmail();
                 if (email) {
                     const walletRes = await apiCall(`/wallet/findby/email/${email}`);
                     if (walletRes.ok && walletRes.data) {
-                        const uname = walletRes.data.username || email.split('@')[0];
+                        currentUserId = walletRes.data.userId;
+                        currentWalletId = walletRes.data.walletId;
+                        currentUsername = walletRes.data.username;
+                        const uname = currentUsername || email.split('@')[0];
                         document.getElementById("welcomeTitle").innerText = `Welcome, ${uname}`;
                     }
                 }
@@ -81,22 +88,47 @@
                     if (transactions.length === 0) {
                         txContainer.innerHTML = "<p style='color:#aaa;'>No recent transactions found.</p>";
                     } else {
-                        // Limit recent transactions to max 3 items
                         const recent = transactions.slice(0, 3);
 
                         let html = '<ul class="transaction-list">';
                         recent.forEach(tx => {
-                            const isPositive = tx.type === 'DEPOSIT' || tx.type === 'RECEIVE';
-                            const amountClass = isPositive ? 'positive' : 'negative';
-                            const sign = isPositive ? '+' : '-';
+                            const dateStr = tx.timestamp ? new Date(tx.timestamp).toLocaleString() : 'Date Unknown';
+
+                            let isSender = false;
+                            if (currentWalletId && tx.senderWalletId) {
+                                isSender = (String(tx.senderWalletId) === String(currentWalletId));
+                            }
+                            if (!isSender && currentUsername && tx.senderUsername) {
+                                isSender = (tx.senderUsername.trim().toLowerCase() === currentUsername.trim().toLowerCase());
+                            }
+                            if (!isSender && currentUserId && tx.receiverId) {
+                                isSender = (String(tx.receiverId) === String(currentUserId));
+                            }
+
+                            let partyStr = '';
+                            let amountSign = '';
+                            let amountClass = '';
+
+                            if (isSender) {
+                                const recipient = tx.receiverUsername || (tx.receiverWalletId ? `Wallet #${tx.receiverWalletId}` : 'Recipient');
+                                partyStr = `To: ${recipient}`;
+                                amountSign = '-';
+                                amountClass = 'negative';
+                            } else {
+                                const sender = tx.senderUsername || (tx.senderWalletId ? `Wallet #${tx.senderWalletId}` : 'Sender');
+                                partyStr = `From: ${sender}`;
+                                amountSign = '+';
+                                amountClass = 'positive';
+                            }
                             
                             html += `
                                 <li class="transaction-item">
                                     <div class="tx-info">
                                         <span class="tx-title">${tx.description || tx.type || 'Transaction'}</span>
-                                        <span class="tx-date">${new Date(tx.timestamp || Date.now()).toLocaleString()}</span>
+                                        <span class="tx-date" style="margin-top: 2px;">${dateStr}</span>
+                                        <span class="tx-date">${partyStr}</span>
                                     </div>
-                                    <div class="tx-amount ${amountClass}">${sign}$${parseFloat(tx.amount).toFixed(2)}</div>
+                                    <div class="tx-amount ${amountClass}">${amountSign}$${parseFloat(tx.amount || 0).toFixed(2)}</div>
                                 </li>
                             `;
                         });

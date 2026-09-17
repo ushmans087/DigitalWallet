@@ -18,13 +18,15 @@ public class PaymentResponseDTO {
     private Long userId;
     private Long walletId;
     private double amount;
+    private String email;
     private String username;
 
-    public PaymentResponseDTO(Long userId, Long walletId, double amount, String username) {
+    public PaymentResponseDTO(Long userId, Long walletId, double amount, String email,String username) {
         this.userId = userId;
         this.walletId = walletId;
         this.amount = amount;
         this.username = username;
+        this.email = email;
     }
 
     public Long getUserId() {
@@ -57,5 +59,13 @@ public class PaymentResponseDTO {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
 /*
 Request to Filter All transaction by date from client
 {
-    fromDate;
-    toDate;
+    fromDate; auto 00:00:00
+    toDate; auto 23:59:59
 }
  */
 

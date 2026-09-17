@@ -9,16 +9,16 @@ Request from AuthService to create a wallet for user when registering
 }
  */
 
-public class WalletCreateRequestDTO {
+public class UserRegisterDTO {
 
     private Long userId;
     private String username;
     private String email;
 
-    public WalletCreateRequestDTO() {
+    public UserRegisterDTO() {
     }
 
-    public WalletCreateRequestDTO(Long userId, String username, String email) {
+    public UserRegisterDTO(Long userId, String username, String email) {
         this.userId = userId;
         this.username = username;
         this.email = email;

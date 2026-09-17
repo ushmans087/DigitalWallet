@@ -1,5 +1,6 @@
 package com.sample.wallet_server.Bank;
 
+import com.sample.wallet_server.BankDTO.BankAccountDTO;
 import com.sample.wallet_server.BankDTO.BankAccountRequestDTO;
 import com.sample.wallet_server.BankDTO.BankBalanceUpdateDTO;
 import org.springframework.http.ResponseEntity;
@@ -20,8 +21,7 @@ public class BankAccountController {
     }
 
     @GetMapping("/accounts")
-    public ResponseEntity<List<BankAccountEntity>> getBankAccounts(@AuthenticationPrincipal Jwt jwt) {
-
+    public ResponseEntity<List<BankAccountDTO>> getBankAccounts(@AuthenticationPrincipal Jwt jwt) {
         Long userId = jwt.getClaim("id");
         return ResponseEntity.ok(bankAccountService.getAllAccounts(userId));
     }
@@ -32,6 +32,7 @@ public class BankAccountController {
         Long userId = jwt.getClaim("id");
         BankAccountEntity account = bankAccountService.addAccount(userId, request);
         return ResponseEntity.ok(account);
+
     }
 
     @DeleteMapping("/accounts/{id}")
@@ -40,6 +41,7 @@ public class BankAccountController {
         Long userId = jwt.getClaim("id");
         bankAccountService.deleteAccount(userId, id);
         return ResponseEntity.ok("Bank account deleted successfully");
+
     }
 
     @PutMapping("/accounts/{id}/deposit")
@@ -47,6 +49,7 @@ public class BankAccountController {
 
         Long userId = jwt.getClaim("id");
         return ResponseEntity.ok(bankAccountService.deposit(userId, id, request.getAmount()));
+
     }
 
     @PutMapping("/accounts/{id}/withdraw")

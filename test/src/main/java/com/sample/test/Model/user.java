@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "users")
 @NoArgsConstructor
 @AllArgsConstructor
-public class user {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,10 +21,11 @@ public class user {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    public user(String username, String hashedPassword, String email) {
+    public User(String username, String hashedPassword, String email) {
         this.username = username;
         this.password = hashedPassword;
         this.email = email;
+        this.role = Role.USER;
     }
 
     public Role getRole() {

@@ -40,12 +40,12 @@
             <form id="filterForm">
                 <div class="filter-grid">
                     <div class="form-group mb-0">
-                        <label class="form-label" for="fromDate">From Date & Time</label>
-                        <input type="datetime-local" id="fromDate" class="form-control">
+                        <label class="form-label" for="fromDate">From Date</label>
+                        <input type="date" id="fromDate" class="form-control">
                     </div>
                     <div class="form-group mb-0">
-                        <label class="form-label" for="toDate">To Date & Time</label>
-                        <input type="datetime-local" id="toDate" class="form-control">
+                        <label class="form-label" for="toDate">To Date</label>
+                        <input type="date" id="toDate" class="form-control">
                     </div>
                     <div class="d-flex gap-2 mb-0">
                         <button type="submit" class="btn" style="flex: 1;">Apply Filter</button>
@@ -81,32 +81,44 @@
         const activeTag = document.getElementById("activeFilterTag");
         const fromDateInput = document.getElementById("fromDate");
         const toDateInput = document.getElementById("toDate");
+        let currentUserId = null;
+        let currentWalletId = null;
+        let currentUsername = null;
 
-        // Helper to format Date object into YYYY-MM-THH:mm format for datetime-local input
-        function formatForInput(date) {
+        function formatForDateInput(date) {
             const pad = (n) => String(n).padStart(2, '0');
             const yyyy = date.getFullYear();
             const mm = pad(date.getMonth() + 1);
             const dd = pad(date.getDate());
-            const hh = pad(date.getHours());
-            const min = pad(date.getMinutes());
-            return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+            return `${yyyy}-${mm}-${dd}`;
         }
 
-        // Helper to convert input datetime-local string to ISO LocalDateTime string (YYYY-MM-DDTHH:mm:ss)
-        function formatToIsoLocalDateTime(inputStr, isEndOfDay = false) {
-            if (!inputStr) return null;
-            let date = new Date(inputStr);
-            if (isNaN(date.getTime())) return null;
+        function formatToIsoLocalDateTime(dateVal, isEndOfDay = false) {
+            if (!dateVal) return null;
+            const timePart = isEndOfDay ? "23:59:59" : "00:00:00";
+            return `${dateVal}T${timePart}`;
+        }
 
-            const pad = (n) => String(n).padStart(2, '0');
-            const yyyy = date.getFullYear();
-            const mm = pad(date.getMonth() + 1);
-            const dd = pad(date.getDate());
-            const hh = pad(date.getHours());
-            const min = pad(date.getMinutes());
-            const ss = isEndOfDay ? "59" : pad(date.getSeconds());
-            return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}`;
+        function setDefaultDates() {
+            const todayStr = formatForDateInput(new Date());
+            fromDateInput.value = todayStr;
+            toDateInput.value = todayStr;
+        }
+
+        async function fetchCurrentUserInfo() {
+            try {
+                const email = getUserEmail();
+                if (email) {
+                    const walletRes = await apiCall(`/wallet/findby/email/${email}`);
+                    if (walletRes.ok && walletRes.data) {
+                        currentUserId = walletRes.data.userId;
+                        currentWalletId = walletRes.data.walletId;
+                        currentUsername = walletRes.data.username;
+                    }
+                }
+            } catch (e) {
+                console.warn("Could not fetch user info", e);
+            }
         }
 
         function renderTransactions(transactions) {
@@ -115,21 +127,40 @@
                 return;
             }
 
-            // Sort transactions by date (newest first)
             transactions.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
 
             let html = '<ul class="transaction-list">';
             transactions.forEach(tx => {
-                const isPositive = tx.type === 'DEPOSIT' || tx.type === 'RECEIVE';
-                const amountClass = isPositive ? 'positive' : 'negative';
-                const sign = isPositive ? '+' : '-';
                 const dateStr = tx.timestamp ? new Date(tx.timestamp).toLocaleString() : 'Date Unknown';
                 
-                let detailsStr = '';
-                if (tx.receiverUsername) {
-                    detailsStr = `To/From: ${tx.receiverUsername}`;
-                } else if (tx.receiverWalletId) {
-                    detailsStr = `To/From Wallet ID: ${tx.receiverWalletId}`;
+                // Determine if current user is the sender
+                let isSender = false;
+                if (currentWalletId && tx.senderWalletId) {
+                    isSender = (String(tx.senderWalletId) === String(currentWalletId));
+                }
+                if (!isSender && currentUsername && tx.senderUsername) {
+                    isSender = (tx.senderUsername.trim().toLowerCase() === currentUsername.trim().toLowerCase());
+                }
+                if (!isSender && currentUserId && tx.receiverId) {
+                    isSender = (String(tx.receiverId) === String(currentUserId));
+                }
+
+                let partyStr = '';
+                let amountSign = '';
+                let amountClass = '';
+
+                if (isSender) {
+                    // Sender side: amount is -amount, status is "To: <receiver username>"
+                    const recipient = tx.receiverUsername || (tx.receiverWalletId ? `Wallet #${tx.receiverWalletId}` : 'Recipient');
+                    partyStr = `To: ${recipient}`;
+                    amountSign = '-';
+                    amountClass = 'negative';
+                } else {
+                    // Receiver side: amount is +amount, status is "From: <sender username>"
+                    const sender = tx.senderUsername || (tx.senderWalletId ? `Wallet #${tx.senderWalletId}` : 'Sender');
+                    partyStr = `From: ${sender}`;
+                    amountSign = '+';
+                    amountClass = 'positive';
                 }
 
                 let statusBadge = '';
@@ -149,9 +180,9 @@
                                 ${statusBadge}
                             </div>
                             <span class="tx-date" style="margin-top: 2px;">${dateStr}</span>
-                            ${detailsStr ? `<span class="tx-date">${detailsStr}</span>` : ''}
+                            <span class="tx-date">${partyStr}</span>
                         </div>
-                        <div class="tx-amount ${amountClass}">${sign}$${parseFloat(tx.amount || 0).toFixed(2)}</div>
+                        <div class="tx-amount ${amountClass}">${amountSign}$${parseFloat(tx.amount || 0).toFixed(2)}</div>
                     </li>
                 `;
             });
@@ -163,6 +194,10 @@
             container.innerHTML = "<p style='color:#aaa;'>Loading transactions...</p>";
             activeTag.style.display = "none";
             clearPresetChipsActive();
+
+            if (!currentUserId) {
+                await fetchCurrentUserInfo();
+            }
 
             try {
                 const res = await apiCall("/payment/get");
@@ -192,6 +227,10 @@
             }
 
             container.innerHTML = "<p style='color:#aaa;'>Filtering transactions...</p>";
+
+            if (!currentUserId) {
+                await fetchCurrentUserInfo();
+            }
 
             try {
                 const res = await apiCall("/payment/get/filter", {
@@ -225,7 +264,6 @@
         function applyPreset(type) {
             clearPresetChipsActive();
             
-            // Highlight clicked preset chip
             const clickedBtn = event.target;
             if (clickedBtn && clickedBtn.classList.contains('preset-chip')) {
                 clickedBtn.classList.add('active');
@@ -236,23 +274,21 @@
             let to = new Date();
 
             if (type === 'today') {
-                from.setHours(0, 0, 0, 0);
-                to.setHours(23, 59, 59, 999);
+                from = now;
+                to = now;
             } else if (type === '7days') {
                 from.setDate(now.getDate() - 7);
-                from.setHours(0, 0, 0, 0);
-                to.setHours(23, 59, 59, 999);
+                to = now;
             } else if (type === '30days') {
                 from.setDate(now.getDate() - 30);
-                from.setHours(0, 0, 0, 0);
-                to.setHours(23, 59, 59, 999);
+                to = now;
             } else if (type === 'thisMonth') {
-                from = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
-                to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+                from = new Date(now.getFullYear(), now.getMonth(), 1);
+                to = now;
             }
 
-            fromDateInput.value = formatForInput(from);
-            toDateInput.value = formatForInput(to);
+            fromDateInput.value = formatForDateInput(from);
+            toDateInput.value = formatForDateInput(to);
 
             applyFilter(fromDateInput.value, toDateInput.value);
         }
@@ -264,12 +300,14 @@
         });
 
         document.getElementById("clearFilterBtn").addEventListener("click", () => {
-            fromDateInput.value = "";
-            toDateInput.value = "";
+            setDefaultDates();
             loadHistory();
         });
 
-        document.addEventListener("DOMContentLoaded", loadHistory);
+        document.addEventListener("DOMContentLoaded", () => {
+            setDefaultDates();
+            loadHistory();
+        });
     </script>
 </body>
 </html>

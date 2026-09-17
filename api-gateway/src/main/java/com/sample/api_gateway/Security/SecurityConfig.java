@@ -15,14 +15,10 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(
-            ServerHttpSecurity http) {
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
 
-        return http
-                .csrf(csrf -> csrf.disable())
-
+        return http.csrf(csrf -> csrf.disable())
                 .cors(cors -> {})
-
                 .authorizeExchange(exchange -> exchange
                         .pathMatchers(
                                 "/auth/register",
@@ -30,19 +26,15 @@ public class SecurityConfig {
                         ).permitAll()
                         .anyExchange().authenticated()
                 )
-
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt(jwt -> {})
-                )
-
-                .build();
+                ).build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration configuration = new CorsConfiguration();
-
         configuration.setAllowedOrigins(
                 List.of("http://localhost:5173","http" +
                         "://127.0.0.1:5173")
@@ -63,15 +55,9 @@ public class SecurityConfig {
         );
 
         configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
-
-        source.registerCorsConfiguration(
-                "/**",
-                configuration
-        );
-
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }

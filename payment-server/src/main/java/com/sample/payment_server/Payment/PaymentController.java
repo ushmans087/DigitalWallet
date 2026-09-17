@@ -20,51 +20,34 @@ public class PaymentController {
     }
 
     @PutMapping("/transfer")
-    public ResponseEntity<?> transferPayment(
-            @RequestBody TransferRequestDTO request,
-            @AuthenticationPrincipal Jwt jwt) {
-
+    public ResponseEntity<?> transferPayment(@RequestBody TransferRequestDTO request, @AuthenticationPrincipal Jwt jwt) {
         String senderEmail = jwt.getSubject();
-
-        return ResponseEntity.ok(
-                paymentService.transfer(
-                        senderEmail,
-                        request.getReceiverWalletId(),
-                        request.getAmount(),
-                        request.getDescription()
-                )
-        );
+        return ResponseEntity.ok(paymentService.transfer(senderEmail, request.getReceiverWalletId(), request.getAmount(), request.getDescription()));
     }
 
     @GetMapping("/get")
-    public ResponseEntity<?> getAllTransaction(
-            @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<?> getAllTransaction(@AuthenticationPrincipal Jwt jwt,@RequestParam(defaultValue = "0") int pageNumber,@RequestParam(defaultValue = "10") int limit) {
+        // u have to check first if account exist or not
 
-        String email = jwt.getSubject();
-        Long walletId = paymentService.getSender(email).getWalletId();
-
-        return ResponseEntity.ok(
-                transactionService.getAllTransactions(walletId)
-        );
+        Long userId = ((Number) jwt.getClaim("id")).longValue();
+        return ResponseEntity.ok(transactionService.getAllTransactions(userId,pageNumber,limit));
     }
 
     @RequestMapping(value = "/get/filter", method = {RequestMethod.GET, RequestMethod.POST})
-    public ResponseEntity<?> getAllTransactionsByFilter(
-            @AuthenticationPrincipal Jwt jwt,@RequestBody TransactionDateFilterDTO transactionFilterDTO) {
+    public ResponseEntity<?> getAllTransactionsByFilter(@AuthenticationPrincipal Jwt jwt,@RequestBody TransactionDateFilterDTO transactionFilterDTO) {
 
-        Long senderId = ((Number)jwt.getClaim("id")).longValue();
-        return ResponseEntity.ok(transactionService.getAllTransactionsByFilter(senderId,transactionFilterDTO));
+        // u have to check first if account exist or not , dont trust jwt
+
+        Long userId = ((Number)jwt.getClaim("id")).longValue();
+        return ResponseEntity.ok(transactionService.getAllTransactionsByFilter(userId,transactionFilterDTO));
     }
 
     @GetMapping("/get/recent")
-    public ResponseEntity<?> getRecentTransaction(
-            @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<?> getRecentTransaction(@AuthenticationPrincipal Jwt jwt,@RequestParam(defaultValue = "0") int pageNumber,@RequestParam(defaultValue = "10") int limit) {
 
-        String email = jwt.getSubject();
-        Long walletId = paymentService.getSender(email).getWalletId();
+        // u have to check first if account exist or not
 
-        return ResponseEntity.ok(
-                transactionService.getRecentTransactions(walletId)
-        );
+        Long userId = ((Number)jwt.getClaim("id")).longValue();
+        return ResponseEntity.ok(transactionService.getRecentTransactions(userId,pageNumber,limit));
     }
 }

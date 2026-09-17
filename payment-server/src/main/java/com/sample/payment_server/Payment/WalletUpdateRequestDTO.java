@@ -14,10 +14,12 @@ Request to walletService to update the amount in corresponding users after payme
 public class WalletUpdateRequestDTO {
     private Long walletId;
     private double amount;
+    private String email;
 
-    WalletUpdateRequestDTO(Long walletId, double amount) {
+    WalletUpdateRequestDTO(Long walletId, double amount,String email) {
         this.walletId = walletId;
         this.amount = amount;
+        this.email = email;
     }
 
     public Long getWalletId() {
@@ -34,5 +36,13 @@ public class WalletUpdateRequestDTO {
 
     public void setAmount(double amount) {
         this.amount = amount;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

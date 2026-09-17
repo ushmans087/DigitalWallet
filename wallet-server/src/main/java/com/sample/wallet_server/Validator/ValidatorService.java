@@ -2,6 +2,7 @@ package com.sample.wallet_server.Validator;
 
 import com.sample.wallet_server.Bank.BankAccountRepo;
 import com.sample.wallet_server.Verification.VerificationService;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,11 +24,10 @@ public class ValidatorService {
         return validatorRepo.findByStatus("PENDING");
     }
 
-    public boolean verifyPending(Long id) {
-        ValidatorEntity request = validatorRepo.findById(id).orElse(null);
+    @CacheEvict(value = "bankAccountById" , key = "#request.getUserId()")
+    public boolean verifyPending(Long id,ValidatorEntity request) {
 
-        if (request == null || !request.getStatus().equals("PENDING")) return false;
-        if (!verificationService.verify(request)) return false;
+        if (request == null || !request.getStatus().equals("PENDING") || !verificationService.verify(request)) return false;
 
         var account = bankAccountRepo.findById(request.getBankAccountId()).orElse(null);
         if (account == null) return false;

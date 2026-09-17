@@ -17,12 +17,14 @@ public class WalletResponseDTO {
     private Long userId;
     private Long walletId;
     private double amount;
+    private String email;
     private String username;
 
-    WalletResponseDTO(Long userId, Long walletId, double amount, String username) {
+    WalletResponseDTO(Long userId, Long walletId, double amount, String username,String email) {
         this.userId = userId;
         this.walletId = walletId;
         this.amount = amount;
+        this.email = email;
         this.username = username;
     }
 
@@ -56,5 +58,13 @@ public class WalletResponseDTO {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

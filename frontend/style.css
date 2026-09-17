@@ -662,4 +662,203 @@ input[type="date"], input[type="datetime-local"] {
     font-weight: 500;
 }
 
+/* Custom Segmented Account Type Selector for Bank Registration */
+.type-selector-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.type-option-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.25s ease;
+    user-select: none;
+}
+
+.type-option-card:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: #555;
+    transform: translateY(-2px);
+}
+
+.type-option-card.selected {
+    background: linear-gradient(135deg, rgba(100, 181, 246, 0.15) 0%, rgba(30, 136, 229, 0.25) 100%);
+    border: 1px solid #64b5f6;
+    box-shadow: 0 4px 15px rgba(100, 181, 246, 0.2);
+}
+
+.type-option-icon {
+    font-size: 1.3rem;
+}
+
+.type-option-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #fff;
+}
+
+.type-option-desc {
+    font-size: 0.75rem;
+    color: #aaa;
+}
+
+/* Custom Visual Bank Account Dropdown Selector */
+.custom-bank-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.custom-bank-select-trigger {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    background: linear-gradient(145deg, #1e1e1e 0%, #151515 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-color);
+    font-family: var(--font-family);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+}
+
+.custom-bank-select-trigger:hover {
+    border-color: #64b5f6;
+    background: linear-gradient(145deg, #252525 0%, #1a1a1a 100%);
+}
+
+.custom-bank-select-trigger.open {
+    border-color: #64b5f6;
+    box-shadow: 0 0 10px rgba(100, 181, 246, 0.2);
+}
+
+.custom-bank-options-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: #181818;
+    border: 1px solid #333;
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
+    z-index: 100;
+    max-height: 240px;
+    overflow-y: auto;
+    display: none;
+    padding: 0.5rem;
+}
+
+.custom-bank-options-menu.show {
+    display: block;
+    animation: fadeInDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.custom-bank-option-item {
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.15s ease;
+    margin-bottom: 0.25rem;
+}
+
+.custom-bank-option-item:last-child {
+    margin-bottom: 0;
+}
+
+.custom-bank-option-item:hover, .custom-bank-option-item.selected {
+    background: rgba(100, 181, 246, 0.15);
+    border: 1px solid rgba(100, 181, 246, 0.3);
+}
+
+.bank-item-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.bank-item-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.bank-item-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #fff;
+}
+
+.bank-item-sub {
+    font-size: 0.75rem;
+    color: #aaa;
+}
+
+.bank-item-balance {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #81c784;
+}
+
+/* Styled Sending & Receiving badges in History/Dashboard */
+.tx-badge-direction {
+    font-size: 0.725rem;
+    font-weight: 600;
+    padding: 0.15rem 0.55rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-right: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tx-badge-sending {
+    background: rgba(239, 83, 80, 0.15);
+    color: #ef5350;
+    border: 1px solid rgba(239, 83, 80, 0.3);
+}
+
+.tx-badge-receiving {
+    background: rgba(76, 175, 80, 0.15);
+    color: #81c784;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.tx-party-label {
+    font-size: 0.825rem;
+    color: #bbb;
+    font-weight: 500;
+}
+
+.tx-party-name {
+    color: #fff;
+    font-weight: 600;
+}
+
+
 

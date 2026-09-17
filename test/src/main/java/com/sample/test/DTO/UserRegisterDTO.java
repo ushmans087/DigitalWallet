@@ -1,12 +1,12 @@
 package com.sample.test.DTO;
 
-public class WalletRequestDTO {
+public class UserRegisterDTO {
 
     private Long userId;
     private String username;
     private String email;
 
-    public WalletRequestDTO(Long userId, String username, String email) {
+    public UserRegisterDTO(Long userId, String username, String email) {
         this.userId = userId;
         this.username = username;
         this.email = email;

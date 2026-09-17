@@ -18,41 +18,27 @@ public class VerificationService {
         this.bankAccountRepo = bankAccountRepo;
     }
 
-    public boolean verifyBankToWallet(Long userId, Long accountId, double amount) {
-        if (amount <= 0) return false;
-
-        WalletEntity wallet = walletRepo.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
-
-        BankAccountEntity account = bankAccountRepo.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Bank account not found"));
+    public boolean verifyBankToWallet(WalletEntity wallet,BankAccountEntity account,double amount) {
 
         if (!account.getWallet().getId().equals(wallet.getId())) return false;
         if (!account.isVerified()) return false;
-        if (account.getBalance() < amount) return false;
+        if (amount <= 0 || account.getBalance() < amount) return false;
 
         return true;
     }
 
-    public boolean verifyWalletToBank(Long userId, Long accountId, double amount) {
-        if (amount <= 0) return false;
-
-        WalletEntity wallet = walletRepo.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
-
-        BankAccountEntity account = bankAccountRepo.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Bank account not found"));
+    public boolean verifyWalletToBank(WalletEntity wallet,BankAccountEntity account,double amount){
 
         if (!account.getWallet().getId().equals(wallet.getId())) return false;
         if (!account.isVerified()) return false;
-        if (wallet.getBalance() < amount) return false;
+        if (amount <= 0 || account.getBalance() < amount) return false;
 
         return true;
     }
+
     public boolean verify(ValidatorEntity request) {
 
         if (request.getAmount() <= 0) return false;
-
         BankAccountEntity account = bankAccountRepo.findById(request.getBankAccountId()).orElse(null);
 
         if (account == null) return false;

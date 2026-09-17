@@ -1,6 +1,5 @@
 package com.sample.test.Util;
 
-import ch.qos.logback.classic.encoder.JsonEncoder;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
@@ -23,53 +22,47 @@ import java.util.Base64;
 
 @Configuration
 public class JWTUtil {
-    private final String SECRET = "say_my_name";
-    private final long expiration = 1000 * 60 * 60;
+    private final long expiration = 1000 * 60 * 15;
 
-    private static final String PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\n" +
-            "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDaAo9ppe9cvzpl\n" +
-            "Pt5aAB10yHdiKUxcAucX6PNdkdv1/qxTA0AsTFYd/LUguZciEsfTD3WUxwD5VemD\n" +
-            "jIuOIJiimJ7g3eNXbNQJETDuAGO9Mpb17y+7YEJvgTJbEj9+UG7Vr6AvR8KhAajj\n" +
-            "2f3rIxWZPWonlc9R8S32NcHnduuu22zFbaaH+t0FfmKPjdP58YV+741d/eG0bWpr\n" +
-            "bnLRvbWEzco56B1M/VlvIb7eCcb8Dp1o3hcDPYylfjDzbMWBddFq8BfRCf7WQo8t\n" +
-            "/zgrOGIvQRAH5wdG3/CWnza7F/llMSfD/AtJFz+as5lt5hhHDWCZJmRn/pY9dQwk\n" +
-            "aYOhZrN/AgMBAAECggEAAoWBDyHCMPptPHqLq9LQhGdFKjd8EJxf++DP38cuGhxF\n" +
-            "9ffVqC2B2XrwxV4gJ168PO6y13OtyTR7LPBVNOGfolHNlKA8Xuh9U1WFkVsjzC5n\n" +
-            "nJSVor8sRYnjATam0VkwzvvnCGT2FVKll20QCMYxG8KgFbEf4ry9YVmh0oGHnFAb\n" +
-            "6yQDJxQfdmfU8eecAfDTE/ABhXK5yepl/t4JrfbSKTIh1QT9JHdZXCsBxFNxRguy\n" +
-            "2K1APfni0jn3byCX/RughaTX27TVjTiVnuI78VCHqls98/qGQHRep+233+/G0VH5\n" +
-            "32m8K3r4E4vPTVWnrgq6fpLmt4gMIBV/KUCObyKRgQKBgQD4lwzUY9Wl5ILP0A06\n" +
-            "WSbIAyMNodBMBmFltKtkVrV0lPCEJO2I0pay1slTdJ1dhjVHHMvc+DF9bnfp2bIp\n" +
-            "Udq+a7td3MCYKattNpyvBeVz5QNhiWgWrtpZ79J7hj6oLKTZR27C/jl4aHWHlQTM\n" +
-            "IyAqrT9jdlvubtPGSnySn9za4QKBgQDggiiokdCZkVkBnN3X7Cmi4hpcHrZJItav\n" +
-            "2ozVvbviXd2aIC82GPfvCFkd9YLWYe6mjOH1aDex9pbw8orza9oEYgmqO6bdiWue\n" +
-            "blCx0274H2FgZ15wmdabR27olDTs4dIm1zI8Ziz09CNws2gMEubzSVH3V185qZty\n" +
-            "2rJIPqq6XwKBgDA8t0ubV8DKF6wVlguFcyYKncmuZYnrDwk6RqvAu5M0t3sc407S\n" +
-            "dlWbohNkpIiaW0pCRzjInGnXfsNM7+perNCYfRIYnPKp207k8wBvZ3fWr5JEpIMK\n" +
-            "SOp8w94eTZg6mX5kAxUpWaOIuY2ml/i4tCwz1AIL3IjmzodCuuuEw8lhAoGBAK8P\n" +
-            "DuESghOcsEh/psQdFAI8R82Y7Q5uKfUJd1ObFIvYIVlyyx1lrr4mRkcEDzdXOZ2I\n" +
-            "sRCIaRVNcDkFBq/0YxWT1HF2/hA0fUQWRLnEYfz7ixR+xbcLXbnKo4KbPgGPvCwp\n" +
-            "FLTf/yIp1BCm8/SmMIt3moBBErGFvP575RRMORgFAoGATOSpOl71DCvC686zipHU\n" +
-            "kqtHGS2oveoDYpXkFzsbadcQSDdUT98vTbOT4+4PRL6hvLwZ/lujlHFFL85qnyKm\n" +
-            "FayHTIvteBYa/A2O/HIpiRrAQsdBNdRBMDBM1zH55BSPulFiNrvMvRLiFcdoaS87\n" +
-            "qmVGRdnmaRwrI/Yezu1FdUg=\n" +
-            "-----END PRIVATE KEY-----";
+    private static final String PRIVATE_KEY =
+            "MIIEugIBADANBgkqhkiG9w0BAQEFAASCBKQwggSgAgEAAoIBAQDxcH27o+YB+5nA\n" +
+                    "iCWoBE9uXcsm7msZxXjajOyQdXVCPKUdZwA6PlLnlA3ucIv2pORxOh1SAsuQ1bAg\n" +
+                    "cquoQWELlibYPB7Jhnpg3K06pjF2nw782k82tznFYG3aGfuY5s9fQGU6a13weeVz\n" +
+                    "oQ+ZWxVuDzofqx1t1dty9xWwvx+U8qjlUeN/ICtzBozkj9rkEnwqqsgxiGQWpjdk\n" +
+                    "rHNSt1L81PKcZ97L7Dwu7yaGwVbR2MlhPQ8Vxovxd8LbpkGdEzbhfzc9mGb4k3RI\n" +
+                    "TS0iKa+L0KTqXjHI3rIHYTWLZXRHW4BFMIfjUcCHWhEvGv+rHS8RxSSDMSHXv9jj\n" +
+                    "cKUOlWElAgMBAAECggEALJNgB1l4gQO2jJMmXqmjD6Wd+QtaNzkb+b+8emRROKAx\n" +
+                    "POc0Jcy1aj+NvejGEoy5h4Ua/jX5Zv1o5ei99BPUCrtXYyNgbMUZCZKcogAmkDfI\n" +
+                    "INtediPodN47keGrr7xna3bcaaeCgcBDonBJTL9CCt6hVND3Hzz1Zfmj5cy3lDxI\n" +
+                    "LkVx2m4LhoBPM8PQDH0BuQyvWJyvbiF4W61VrESimrWJKkQlmT2ByNZk8l3fkMJw\n" +
+                    "HgsVUUkjUXT9qKQCYqeqSxDumNRE9T1JBYtqNhIS85Ath7Dm4bXihuPwahL4PQ7d\n" +
+                    "IdnihvmluJ0x6xqpkgG0p2VWxJ9dVhO29/ufV131EQKBgQD8SCXxVNjC4Qcrvvry\n" +
+                    "2Zs08XIo8uSeNpyfqRrVYOoxYbsxQw8YgZuh/wlg5PIx86JXC4aEbOF+8lOQFkIj\n" +
+                    "UXK9IdPxxjtlUgK9UpVO/Ha2mZSlp+L6Z7MDSj49QUnfEXK614Ra4nJDJoSJxoca\n" +
+                    "bw7eAuhqfT2lMxAWshg94sedtQKBgQD0/29RuxPVM8rMg5mN7h/UeDQffVmL4Dgr\n" +
+                    "zNGS6KON5J6spTSejGMq3Xg2cClkgcEm+kWEIVGTZbzrx5qRB2M/OkGBzUPzLx2e\n" +
+                    "LBQRCrZHIByQ02f0yhReCHv9Hk8YO51ES2m5CCBWqOy0zQFUJ4A69Pno73lK94Gh\n" +
+                    "COqx2LpbsQKBgA2giAwlHSBJr215f2ymvG97q0Ly+85f/M3TAJQODBhmwwnCKYqV\n" +
+                    "VabGc+c79qkkE9zHzphQmU2WIVVjHmdx+tSkgyJIJuUuLN+1GkON94udeB4Kl4QX\n" +
+                    "HeBLnlkIscjO1HerNIcEPE/MQNSAWMPgw9jSJ2O5KB9IRtIzBIQzP70RAoGAOY0j\n" +
+                    "djyO/R9MfVxQnvGYEo4mGFuWxG/oYgmcFXmGqhdRWtb4FGKADRq3WXphjtWYLPLP\n" +
+                    "j6lQA2L7zRs3aOgmXTzvFHHGi4K+32AVWqd8iBq3+yFeIzexLyGpFp2fEN84I0nf\n" +
+                    "zPJmvlSyPgqGTGF3EuJnLlvKz1xy3AQ/NYXmyRECf0Hk5chrdepVNsk9FT3NV014\n" +
+                    "jDVn0/czHi3rPWpVfvUuKmDrBB+y0a5MdKjivERSBZwyR/dYzGKG73X24sGmd9FY\n" +
+                    "++7d4rRaCEHfXgm7JiiZTeFKXjcP0odk/fIVamsjglzmyzBVp/wu96RtCfGa0VHY\n" +
+                    "1riMcBjDGNJYiGLAtGo=";
 
-    private static final String PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\n" +
-            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2gKPaaXvXL86ZT7eWgAd\n" +
-            "dMh3YilMXALnF+jzXZHb9f6sUwNALExWHfy1ILmXIhLH0w91lMcA+VXpg4yLjiCY\n" +
-            "opie4N3jV2zUCREw7gBjvTKW9e8vu2BCb4EyWxI/flBu1a+gL0fCoQGo49n96yMV\n" +
-            "mT1qJ5XPUfEt9jXB53brrttsxW2mh/rdBX5ij43T+fGFfu+NXf3htG1qa25y0b21\n" +
-            "hM3KOegdTP1ZbyG+3gnG/A6daN4XAz2MpX4w82zFgXXRavAX0Qn+1kKPLf84Kzhi\n" +
-            "L0EQB+cHRt/wlp82uxf5ZTEnw/wLSRc/mrOZbeYYRw1gmSZkZ/6WPXUMJGmDoWaz\n" +
-            "fwIDAQAB\n" +
-            "-----END PUBLIC KEY-----";
+    private static final String PUBLIC_KEY =
+            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8XB9u6PmAfuZwIglqARP\n" +
+                    "bl3LJu5rGcV42ozskHV1QjylHWcAOj5S55QN7nCL9qTkcTodUgLLkNWwIHKrqEFh\n" +
+                    "C5Ym2DweyYZ6YNytOqYxdp8O/NpPNrc5xWBt2hn7mObPX0BlOmtd8Hnlc6EPmVsV\n" +
+                    "bg86H6sdbdXbcvcVsL8flPKo5VHjfyArcwaM5I/a5BJ8KqrIMYhkFqY3ZKxzUrdS\n" +
+                    "/NTynGfey+w8Lu8mhsFW0djJYT0PFcaL8XfC26ZBnRM24X83PZhm+JN0SE0tIimv\n" +
+                    "i9Ck6l4xyN6yB2E1i2V0R1uARTCH41HAh1oRLxr/qx0vEcUkgzEh17/Y43ClDpVh\n" +
+                    "JQIDAQAB";
 
     private RSAPublicKey getPublicKey() throws Exception {
-        String publicKeyPEM = PUBLIC_KEY
-                .replace("-----BEGIN PUBLIC KEY-----", "")
-                .replace("-----END PUBLIC KEY-----", "")
-                .replaceAll("\\s", "");
+        String publicKeyPEM = PUBLIC_KEY.replaceAll("\\s", "");
         byte[] encoded = Base64.getDecoder().decode(publicKeyPEM);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encoded);
@@ -77,10 +70,7 @@ public class JWTUtil {
     }
 
     private RSAPrivateKey getPrivateKey() throws Exception {
-        String privateKeyPEM = PRIVATE_KEY
-                .replace("-----BEGIN PRIVATE KEY-----", "")
-                .replace("-----END PRIVATE KEY-----", "")
-                .replaceAll("\\s", "");
+        String privateKeyPEM = PRIVATE_KEY.replaceAll("\\s", "");
         byte[] encoded = Base64.getDecoder().decode(privateKeyPEM);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);

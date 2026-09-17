@@ -33,16 +33,9 @@ public class TransferEntity {
     public TransferEntity() {
     }
 
-    public TransferEntity(
-            Long senderWalletId,
-            Long receiverWalletId,String senderUsername,
-            String receiverUsername,
-            Long receiverId,
-            Long senderId,
-            double amount,
-            LocalDateTime timestamp,
-            TransferStatus status,
-            String description) {
+    public TransferEntity(Long senderWalletId, Long receiverWalletId,String senderUsername,
+            String receiverUsername, Long receiverId, Long senderId,
+            double amount, LocalDateTime timestamp, TransferStatus status, String description) {
 
         this.senderWalletId = senderWalletId;
         this.receiverWalletId = receiverWalletId;

@@ -86,22 +86,18 @@
 
         async function loadWallet() {
             try {
-                const balRes = await apiCall("/wallet/balance");
-                if (balRes.ok) {
-                    currentBalance = parseFloat(balRes.data);
-                    document.getElementById("walletBalance").innerText = `$${currentBalance.toFixed(2)}`;
-                }
-
                 // Also fetch wallet ID to display it
                 const email = getUserEmail();
                 if (email) {
                     const walletRes = await apiCall(`/wallet/findby/email/${email}`);
                     if (walletRes.ok && walletRes.data) {
                         document.getElementById("walletIdDisplay").innerText = `Wallet ID: ${walletRes.data.walletId}`;
+                        currentBalance = walletRes.data.amount;
+                        document.getElementById("walletBalance").innerText = `$${currentBalance.toFixed(2)}`;
                     }
                 }
 
-                // Load bank accounts for the dropdown
+                // Load bank accounts (displaying bank name and masked account number alone)
                 const bankRes = await apiCall("/wallet/accounts");
                 const select = document.getElementById("bankAccountSelect");
                 if (bankRes.ok) {
@@ -111,7 +107,8 @@
                     } else {
                         select.innerHTML = '';
                         accounts.forEach(acc => {
-                            select.innerHTML += `<option value="${acc.id}">${acc.bankName} (****${acc.accountNumber.toString().slice(-4)})</option>`;
+                            const maskedNum = acc.accountNumber ? `****${acc.accountNumber.toString().slice(-4)}` : '****';
+                            select.innerHTML += `<option value="${acc.id}">${acc.bankName} (${maskedNum})</option>`;
                         });
                     }
                 }

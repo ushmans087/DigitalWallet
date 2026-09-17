@@ -16,18 +16,13 @@ import java.time.Instant;
 public class JWTService {
 
     private final JwtEncoder jwtEncoder;
-    private final JwtDecoder jwtDecoder;
-    private final LoginRepo  loginRepo;
 
     @Autowired
-    public JWTService(JwtEncoder jwtEncoder, JwtDecoder jwtDecoder, LoginRepo  loginRepo) {
+    public JWTService(JwtEncoder jwtEncoder, JwtDecoder jwtDecoder) {
         this.jwtEncoder = jwtEncoder;
-        this.jwtDecoder = jwtDecoder;
-        this.loginRepo = loginRepo;
     }
 
-    public String generateToken(Long id, String email, Role role) {
-
+    public String generateToken(Long id, String email, Role role){
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .subject(email)
@@ -37,16 +32,6 @@ public class JWTService {
                 .expiresAt(now.plusSeconds(3600))
                 .build();
 
-        return jwtEncoder
-                .encode(JwtEncoderParameters.from(claims))
-                .getTokenValue();
-    }
-    public boolean validateToken(String token) {
-        try{
-            Jwt j = jwtDecoder.decode(token);
-            return true;
-        }catch (Exception e){
-            return false;
-        }
+        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
     }
 }
