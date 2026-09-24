@@ -31,7 +31,7 @@ public class VerificationService {
 
         if (!account.getWallet().getId().equals(wallet.getId())) return false;
         if (!account.isVerified()) return false;
-        if (amount <= 0 || account.getBalance() < amount) return false;
+        if (amount <= 0 || wallet.getBalance() < amount) return false;
 
         return true;
     }
