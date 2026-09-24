@@ -68,6 +68,7 @@
             <div id="historyContainer">
                 <p>Loading transactions...</p>
             </div>
+            <div id="paginationContainer"></div>
         </div>
     </div>
 
@@ -84,6 +85,13 @@
         let currentUserId = null;
         let currentWalletId = null;
         let currentUsername = null;
+
+        // Pagination state
+        let currentPage = 1;
+        let pageSize = 10;
+        let totalPages = 1;
+        let totalElements = 0;
+        let isFilterActive = false;
 
         function formatForDateInput(date) {
             const pad = (n) => String(n).padStart(2, '0');
@@ -123,10 +131,11 @@
 
         function renderTransactions(transactions) {
             if (!transactions || transactions.length === 0) {
-                container.innerHTML = "<p style='color:#aaa; text-align:center; padding: 1.5rem 0;'>No transactions found for the selected period.</p>";
+                container.innerHTML = "<p style='color:#aaa; text-align:center; padding: 1.5rem 0;'>No transactions found.</p>";
                 return;
             }
 
+            // Note: If backend already orders by timestamp desc, this preserves or enforces descending order
             transactions.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
 
             let html = '<ul class="transaction-list">';
@@ -150,13 +159,11 @@
                 let amountClass = '';
 
                 if (isSender) {
-                    // Sender side: amount is -amount, status is "To: <receiver username>"
                     const recipient = tx.receiverUsername || (tx.receiverWalletId ? `Wallet #${tx.receiverWalletId}` : 'Recipient');
                     partyStr = `To: ${recipient}`;
                     amountSign = '-';
                     amountClass = 'negative';
                 } else {
-                    // Receiver side: amount is +amount, status is "From: <sender username>"
                     const sender = tx.senderUsername || (tx.senderWalletId ? `Wallet #${tx.senderWalletId}` : 'Sender');
                     partyStr = `From: ${sender}`;
                     amountSign = '+';
@@ -190,8 +197,12 @@
             container.innerHTML = html;
         }
 
-        async function loadHistory() {
+        async function loadHistory(page = 1) {
+            currentPage = page;
+            isFilterActive = false;
             container.innerHTML = "<p style='color:#aaa;'>Loading transactions...</p>";
+            const pagContainer = document.getElementById("paginationContainer");
+            if (pagContainer) pagContainer.innerHTML = "";
             activeTag.style.display = "none";
             clearPresetChipsActive();
 
@@ -200,16 +211,108 @@
             }
 
             try {
-                const res = await apiCall("/payment/get");
+                const res = await apiCall(`/payment/get?pageNumber=${currentPage}&limit=${pageSize}`);
                 if (res.ok) {
-                    renderTransactions(res.data);
+                    let transactions = [];
+                    if (Array.isArray(res.data)) {
+                        transactions = res.data;
+                        totalPages = 1;
+                        totalElements = transactions.length;
+                    } else if (res.data && Array.isArray(res.data.content)) {
+                        transactions = res.data.content;
+                        totalPages = res.data.totalPages || 1;
+                        totalElements = res.data.totalElements || transactions.length;
+                    } else {
+                        transactions = [];
+                        totalPages = 1;
+                        totalElements = 0;
+                    }
+                    renderTransactions(transactions);
+                    renderPaginationControls();
                 } else {
                     container.innerHTML = "<p class='error-message' style='display:block;'>Failed to load history.</p>";
+                    if (pagContainer) pagContainer.innerHTML = "";
                 }
             } catch (error) {
                 console.error(error);
                 container.innerHTML = "<p class='error-message' style='display:block;'>Network error loading transactions.</p>";
+                if (pagContainer) pagContainer.innerHTML = "";
             }
+        }
+
+        function renderPaginationControls() {
+            const pagContainer = document.getElementById("paginationContainer");
+            if (!pagContainer) return;
+
+            if (isFilterActive || totalElements === 0 || totalPages <= 1) {
+                if (isFilterActive && totalElements > 0) {
+                    pagContainer.innerHTML = `<div class="pagination-container"><div class="pagination-info"><span>Filter active: Showing ${totalElements} matching transactions</span></div></div>`;
+                } else {
+                    pagContainer.innerHTML = "";
+                }
+                return;
+            }
+
+            const startItem = (currentPage - 1) * pageSize + 1;
+            const endItem = Math.min(currentPage * pageSize, totalElements);
+
+            let pagesHtml = '';
+            const prevDisabled = currentPage <= 1 ? 'disabled' : '';
+            pagesHtml += `<button class="page-btn" ${prevDisabled} onclick="goToPage(${currentPage - 1})">‹ Prev</button>`;
+
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+
+            if (startPage > 1) {
+                pagesHtml += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) pagesHtml += `<span style="color:#666; padding:0 0.2rem;">...</span>`;
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === currentPage ? 'active' : '';
+                pagesHtml += `<button class="page-btn ${activeClass}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) pagesHtml += `<span style="color:#666; padding:0 0.2rem;">...</span>`;
+                pagesHtml += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+
+            const nextDisabled = currentPage >= totalPages ? 'disabled' : '';
+            pagesHtml += `<button class="page-btn" ${nextDisabled} onclick="goToPage(${currentPage + 1})">Next ›</button>`;
+
+            pagContainer.innerHTML = `
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        <span>Showing ${startItem}–${endItem} of ${totalElements} transactions</span>
+                        <label style="margin-left: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                            Per page:
+                            <select class="pageSize-select" onchange="changePageSize(this.value)">
+                                <option value="5" ${pageSize === 5 ? 'selected' : ''}>5</option>
+                                <option value="10" ${pageSize === 10 ? 'selected' : ''}>10</option>
+                                <option value="20" ${pageSize === 20 ? 'selected' : ''}>20</option>
+                                <option value="50" ${pageSize === 50 ? 'selected' : ''}>50</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="pagination-controls">
+                        ${pagesHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function goToPage(page) {
+            if (page < 1 || page > totalPages || page === currentPage) return;
+            loadHistory(page);
+        }
+
+        function changePageSize(newSize) {
+            pageSize = parseInt(newSize, 10) || 10;
+            loadHistory(1);
         }
 
         async function applyFilter(fromDateVal, toDateVal) {
@@ -227,6 +330,8 @@
             }
 
             container.innerHTML = "<p style='color:#aaa;'>Filtering transactions...</p>";
+            const pagContainer = document.getElementById("paginationContainer");
+            if (pagContainer) pagContainer.innerHTML = "";
 
             if (!currentUserId) {
                 await fetchCurrentUserInfo();
@@ -242,8 +347,12 @@
                 });
 
                 if (res.ok) {
+                    isFilterActive = true;
                     activeTag.style.display = "block";
-                    renderTransactions(res.data);
+                    let transactions = Array.isArray(res.data) ? res.data : (res.data?.content || []);
+                    totalElements = transactions.length;
+                    renderTransactions(transactions);
+                    renderPaginationControls();
                     showToast(`Showing transactions from ${new Date(fromDateVal).toLocaleDateString()} to ${new Date(toDateVal).toLocaleDateString()}`, "info", "Filter Applied");
                 } else {
                     const errorMsg = typeof res.data === 'string' ? res.data : "Failed to fetch filtered transactions.";
@@ -301,12 +410,12 @@
 
         document.getElementById("clearFilterBtn").addEventListener("click", () => {
             setDefaultDates();
-            loadHistory();
+            loadHistory(1);
         });
 
         document.addEventListener("DOMContentLoaded", () => {
             setDefaultDates();
-            loadHistory();
+            loadHistory(1);
         });
     </script>
 </body>

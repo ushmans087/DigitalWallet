@@ -79,12 +79,18 @@
                     }
                 }
 
-                // Fetch recent transactions
-                const txRes = await apiCall("/payment/get/recent");
+                // Fetch recent transactions (page 1, top 3 transactions)
+                const txRes = await apiCall("/payment/get/recent?pageNumber=1&limit=3");
                 const txContainer = document.getElementById("recentTransactions");
                 
                 if (txRes.ok) {
-                    const transactions = txRes.data || [];
+                    let transactions = [];
+                    if (Array.isArray(txRes.data)) {
+                        transactions = txRes.data;
+                    } else if (txRes.data && Array.isArray(txRes.data.content)) {
+                        transactions = txRes.data.content;
+                    }
+
                     if (transactions.length === 0) {
                         txContainer.innerHTML = "<p style='color:#aaa;'>No recent transactions found.</p>";
                     } else {

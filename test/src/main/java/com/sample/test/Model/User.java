@@ -28,6 +28,8 @@ public class User {
         this.role = Role.USER;
     }
 
+    public User(){}
+
     public Role getRole() {
         return role;
     }

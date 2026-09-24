@@ -7,9 +7,6 @@ import com.sample.payment_server.Transactions.TransferEntity;
 import com.sample.payment_server.Transactions.TransferRepo;
 import com.sample.payment_server.Transactions.TransferStatus;
 import jakarta.transaction.Transactional;
-import org.springframework.cache.Cache;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -25,7 +22,7 @@ public class PaymentService {
 
     public PaymentService(TransferRepo transferRepo,RedisCacheManager cacheManager) {
         this.restClient = RestClient.builder()
-                .baseUrl("http://localhost:8086")
+                .baseUrl("http://wallet-server:8086")
                 .build();
         this.transferRepo = transferRepo;
         this.cacheManager = cacheManager;

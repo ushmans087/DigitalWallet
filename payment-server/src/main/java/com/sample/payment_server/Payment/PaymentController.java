@@ -26,7 +26,7 @@ public class PaymentController {
     }
 
     @GetMapping("/get")
-    public ResponseEntity<?> getAllTransaction(@AuthenticationPrincipal Jwt jwt,@RequestParam(defaultValue = "0") int pageNumber,@RequestParam(defaultValue = "10") int limit) {
+    public ResponseEntity<?> getAllTransaction(@AuthenticationPrincipal Jwt jwt,@RequestParam(defaultValue = "1") int pageNumber,@RequestParam(defaultValue = "10") int limit) {
         // u have to check first if account exist or not
 
         Long userId = ((Number) jwt.getClaim("id")).longValue();
@@ -43,7 +43,7 @@ public class PaymentController {
     }
 
     @GetMapping("/get/recent")
-    public ResponseEntity<?> getRecentTransaction(@AuthenticationPrincipal Jwt jwt,@RequestParam(defaultValue = "0") int pageNumber,@RequestParam(defaultValue = "10") int limit) {
+    public ResponseEntity<?> getRecentTransaction(@AuthenticationPrincipal Jwt jwt,@RequestParam(defaultValue = "1") int pageNumber,@RequestParam(defaultValue = "3") int limit) {
 
         // u have to check first if account exist or not
 
